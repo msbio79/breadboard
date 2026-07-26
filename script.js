@@ -624,10 +624,10 @@
       const timeDiff = now - lastTapTime;
       const distFromLastTap = Math.hypot(screenX - lastTapScreenPos.x, screenY - lastTapScreenPos.y);
 
-      // 이전 탭 기록이 있고 450ms 이내, 45px 이내 터치인 경우 (2번째 터치)
-      if (lastTapTime > 0 && timeDiff < 450 && distFromLastTap < 45) {
-        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (여유 반경 20px 적용)
-        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 20);
+      // 이전 탭 기록이 있고 500ms 이내, 80px 이내 터치인 경우 (2번째 터치)
+      if (lastTapTime > 0 && timeDiff < 500 && distFromLastTap < 80) {
+        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (애플펜슬 정밀도 보정을 위해 여유 반경 25px 적용)
+        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 25);
         if (doubleTapComp) {
           deleteComponent(doubleTapComp);
           resetTapState();
@@ -638,7 +638,7 @@
 
         // 2. 필기 회로 선(Stroke) 더블 탭 삭제
         if (drawMode) {
-          const strokeIdx = (lastTapDrawingIndex !== -1) ? lastTapDrawingIndex : getDrawingStrokeAt(wPt, 25);
+          const strokeIdx = (lastTapDrawingIndex !== -1) ? lastTapDrawingIndex : getDrawingStrokeAt(wPt, 30);
           if (strokeIdx !== -1 && strokeIdx < drawings.length) {
             drawings.splice(strokeIdx, 1);
             resetTapState();
@@ -649,10 +649,10 @@
         }
       }
 
-      // 첫 번째 탭 정보 무조건 저장 (미스 터치 및 3회 연속 터치 현상 방지)
+      // 첫 번째 탭 정보 무조건 저장 (애플펜슬 2회 터치 삭제 보장)
       lastTapTime = now;
-      lastTapComponent = getComponentAt(wPt, 20);
-      lastTapDrawingIndex = drawMode ? getDrawingStrokeAt(wPt, 25) : -1;
+      lastTapComponent = getComponentAt(wPt, 25);
+      lastTapDrawingIndex = drawMode ? getDrawingStrokeAt(wPt, 30) : -1;
       lastTapScreenPos = { x: screenX, y: screenY };
     }
 
@@ -757,8 +757,8 @@
 
     const activePointer = pointers.get(e.pointerId);
 
-    // 이동 거리가 35px 이상인 경우만 실제 드래그로 판정하여 더블탭 대기 상태 해제 (애플펜슬 미세 떨림 보정)
-    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 35) {
+    // 이동 거리가 80px 이상인 경우만 실제 드래그로 판정하여 더블탭 대기 상태 해제 (애플펜슬 글래스 미끄러짐 보정)
+    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 80) {
       resetTapState();
     }
 
