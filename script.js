@@ -627,10 +627,10 @@
       const timeDiff = now - lastTapTime;
       const distFromLastTap = Math.hypot(screenX - lastTapScreenPos.x, screenY - lastTapScreenPos.y);
 
-      // 이전 탭 기록이 있고 850ms 이내, 100px 이내 터치인 경우 (2번째 터치)
-      if (lastTapTime > 0 && timeDiff < 850 && distFromLastTap < 100) {
-        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (애플펜슬 정밀도 보정을 위해 여유 반경 30px 적용)
-        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 30);
+      // 이전 탭 기록이 있고 850ms 이내, 120px 이내 터치인 경우 (2번째 터치)
+      if (lastTapTime > 0 && timeDiff < 850 && distFromLastTap < 120) {
+        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (애플펜슬 정밀도 보정을 위해 여유 반경 35px 적용)
+        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 35);
         if (doubleTapComp) {
           deleteComponent(doubleTapComp);
           resetTapState();
@@ -654,7 +654,7 @@
 
       // 첫 번째 탭 정보 무조건 저장 (애플펜슬 2회 터치 삭제 보장)
       lastTapTime = now;
-      lastTapComponent = getComponentAt(wPt, 30);
+      lastTapComponent = getComponentAt(wPt, 35);
       lastTapDrawingIndex = drawMode ? getDrawingStrokeAt(wPt, 35) : -1;
       lastTapScreenPos = { x: screenX, y: screenY };
     }
@@ -760,8 +760,8 @@
 
     const activePointer = pointers.get(e.pointerId);
 
-    // 이동 거리가 100px 이상인 경우만 실제 드래그로 판정하여 더블탭 대기 상태 해제 (애플펜슬 글래스 미끄러짐 보정)
-    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 100) {
+    // 화면 이동(Pan), 부품 핀 이동 드래그, 또는 필기 획 작성 중일 때만 더블탭 대기 상태 해제 (애플펜슬 호버 이동에 의한 1차 탭 삭제 방지)
+    if (isPanning || movingTerminal || (currentDrawingStroke && currentDrawingStroke.points.length > 2)) {
       resetTapState();
     }
 
