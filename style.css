@@ -714,6 +714,10 @@ input:checked + .slider-round:before {
   height: 100%;
   position: relative;
   overflow: hidden;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   background-color: var(--canvas-bg);
   background-image: 
     radial-gradient(var(--border-color) 1px, transparent 1px),
@@ -729,6 +733,7 @@ input:checked + .slider-round:before {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
 }
 
 /* 플로팅 컨트롤 버튼 (사이드바 접혔을 때) */

@@ -118,9 +118,23 @@
   let movingTerminal = null; // { comp, terminal: 'from'|'to'|'anode'|'cathode'|'pos'|'neg'|'pin1'|'pin2' }
   let lastTapTime = 0;
   let lastTapComponent = null;
+  let lastTapDrawingIndex = -1;
+  let lastTapScreenPos = { x: 0, y: 0 };
 
-  // 실험 데이터
-  let currentExperiment = 'free';
+  function resetTapState() {
+    lastTapTime = 0;
+    lastTapComponent = null;
+    lastTapDrawingIndex = -1;
+    lastTapScreenPos = { x: 0, y: 0 };
+  }
+
+  function resetPlacementState() {
+    placementStartHole = null;
+    placementCurrentPos = null;
+    movingTerminal = null;
+    currentDrawingStroke = null;
+    selectedComponent = null;
+  }
 
 
   // ==========================================================================
@@ -441,27 +455,27 @@
   function updateCanvasHint() {
     if (drawMode) {
       canvasHint.querySelector('span').innerText = isEraser 
-        ? "지우개 모드: 필기된 선 위를 드래그하여 지우세요." 
-        : "필기 모드: 캔버스에 마우스나 터치로 필기할 수 있습니다. (두 손가락 드래그 시 화면 이동/확대 가능)";
+        ? "지우개 모드: 필기된 선 위를 드래그하거나 두 번 터치(더블 탭)하여 지우세요." 
+        : "필기 모드: 애플펜슬이나 터치로 필기할 수 있습니다. (두 번 터치 시 획 삭제, 두 손가락 드래그 시 이동/확대)";
       return;
     }
 
     let text = "";
     switch(activeTool) {
       case 'wire':
-        text = "점퍼선 모드: 보드의 구멍 두 곳을 터치하여 연결선을 배치하세요.";
+        text = "점퍼선 모드: 구멍 두 곳을 터치하여 연결선을 배치하세요. (부품/전선을 두 번 터치하면 삭제됩니다)";
         break;
       case 'battery':
-        text = "배터리 모드: 보드의 구멍을 클릭하여 (+, 빨강) 단자선과 (-, 검정) 단자선을 차례로 배치하세요.";
+        text = "배터리 모드: 구멍 두 곳을 차례로 터치하여 (+), (-) 단자선을 배치하세요. (두 번 터치 시 삭제)";
         break;
       case 'resistor':
-        text = "저항 모드: 보드의 구멍 두 곳을 터치하여 저항기를 연결하세요.";
+        text = "저항 모드: 구멍 두 곳을 터치하여 저항기를 연결하세요. (두 번 터치 시 삭제)";
         break;
       case 'led':
-        text = "LED 모드: 긴다리(+)와 짧은다리(-)가 들어갈 보드의 구멍 두 곳을 차례로 선택하세요.";
+        text = "LED 모드: 긴다리(+)와 짧은다리(-) 구멍 두 곳을 차례로 선택하세요. (두 번 터치 시 삭제)";
         break;
       case 'switch':
-        text = "스위치 모드: 가로/세로 연결할 두 구멍을 터치하여 스위치를 꽂으세요.";
+        text = "스위치 모드: 가로/세로 연결할 두 구멍을 터치하여 스위치를 꽂으세요. (두 번 터치 시 삭제)";
         break;
     }
     canvasHint.querySelector('span').innerText = text;
@@ -584,33 +598,58 @@
 
   function onPointerDown(e) {
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (err) {}
     
     const rect = canvas.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
     const wPt = screenToWorld(screenX, screenY);
 
-    // 더블 클릭(더블 탭) 감지하여 부품 삭제
-    if (e.button === 0 && !drawMode) {
-      const clickedComp = getComponentAt(wPt);
-      if (clickedComp) {
-        const now = Date.now();
-        if (now - lastTapTime < 300 && lastTapComponent && lastTapComponent.id === clickedComp.id) {
-          deleteComponent(clickedComp);
-          lastTapTime = 0;
-          lastTapComponent = null;
-          // 드래그 상태 초기화 및 동작 조기 종료
-          placementStartHole = null;
-          placementCurrentPos = null;
-          movingTerminal = null;
+    const isPrimaryAction = (e.button === 0 || e.button === -1 || e.pointerType === 'touch' || e.pointerType === 'pen');
+
+    // 더블 클릭(더블 탭) 감지하여 부품 및 회로 삭제 (아이패드, 애플펜슬 및 터치 대응)
+    if (isPrimaryAction) {
+      const now = Date.now();
+      const timeDiff = now - lastTapTime;
+      const distFromLastTap = Math.hypot(screenX - lastTapScreenPos.x, screenY - lastTapScreenPos.y);
+
+      if (timeDiff < 450 && distFromLastTap < 45) {
+        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (미세 떨림 보정을 위해 여유 반경 18px 허용)
+        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 18);
+        if (doubleTapComp) {
+          deleteComponent(doubleTapComp);
+          resetTapState();
+          resetPlacementState();
+          draw();
           return;
         }
+
+        // 2. 필기 회로 선(Stroke) 더블 탭 삭제
+        if (drawMode) {
+          const strokeIdx = (lastTapDrawingIndex !== -1) ? lastTapDrawingIndex : getDrawingStrokeAt(wPt, 25);
+          if (strokeIdx !== -1 && strokeIdx < drawings.length) {
+            drawings.splice(strokeIdx, 1);
+            resetTapState();
+            resetPlacementState();
+            draw();
+            return;
+          }
+        }
+      }
+
+      // 첫 번째 탭 후보 정보 저장
+      const clickedComp = getComponentAt(wPt, 12);
+      const strokeIdx = drawMode ? getDrawingStrokeAt(wPt, 15) : -1;
+
+      if (clickedComp || strokeIdx !== -1) {
         lastTapTime = now;
         lastTapComponent = clickedComp;
+        lastTapDrawingIndex = strokeIdx;
+        lastTapScreenPos = { x: screenX, y: screenY };
       } else {
-        lastTapTime = 0;
-        lastTapComponent = null;
+        resetTapState();
       }
     }
 
@@ -714,6 +753,12 @@
     const wPt = screenToWorld(screenX, screenY);
 
     const activePointer = pointers.get(e.pointerId);
+
+    // 이동 거리가 8px 이상인 경우 드래그로 판정하여 더블탭 대기 상태 해제
+    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 8) {
+      resetTapState();
+    }
+
     activePointer.clientX = e.clientX;
     activePointer.clientY = e.clientY;
     activePointer.screenX = screenX;
@@ -1018,29 +1063,47 @@
     return null;
   }
 
+  // 필기 회로 stroke 검색 함수
+  function getDrawingStrokeAt(worldPos, extraRadius = 0) {
+    const threshold = 15 + extraRadius;
+    for (let i = drawings.length - 1; i >= 0; i--) {
+      const stroke = drawings[i];
+      if (!stroke || !stroke.points) continue;
+      for (let j = 0; j < stroke.points.length; j++) {
+        const pt = stroke.points[j];
+        const dist = Math.hypot(pt.x - worldPos.x, pt.y - worldPos.y);
+        if (dist < (stroke.width / 2 + threshold)) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
+
   // 월드 좌표 상 부품 본체 클릭 감지
-  function getComponentAt(worldPos) {
+  function getComponentAt(worldPos, extraRadius = 0) {
     for (let comp of components) {
       if (comp.type === 'wire') {
         // 선분 근처 클릭 감지
         const c1 = getHoleCoords(comp.from.col, comp.from.row);
         const c2 = getHoleCoords(comp.to.col, comp.to.row);
-        if (distToSegment(worldPos, c1, c2) < 8) return comp;
+        if (distToSegment(worldPos, c1, c2) < (10 + extraRadius)) return comp;
       } else if (comp.type === 'resistor') {
         const c1 = getHoleCoords(comp.from.col, comp.from.row);
         const c2 = getHoleCoords(comp.to.col, comp.to.row);
-        if (distToSegment(worldPos, c1, c2) < 16) return comp;
+        if (distToSegment(worldPos, c1, c2) < (16 + extraRadius)) return comp;
       } else if (comp.type === 'led') {
         // LED 헤드 바디 클릭
         const c1 = getHoleCoords(comp.anode.col, comp.anode.row);
         const c2 = getHoleCoords(comp.cathode.col, comp.cathode.row);
         const midX = (c1.x + c2.x) / 2;
         const midY = (c1.y + c2.y) / 2 - 12; // 살짝 위쪽이 벌브
-        if (Math.hypot(worldPos.x - midX, worldPos.y - midY) < 22) return comp;
+        if (Math.hypot(worldPos.x - midX, worldPos.y - midY) < (22 + extraRadius)) return comp;
       } else if (comp.type === 'battery') {
         // 배터리 몸체 영역 클릭 감지
-        if (worldPos.x >= BATTERY_X && worldPos.x <= BATTERY_X + BATTERY_W &&
-            worldPos.y >= BATTERY_Y && worldPos.y <= BATTERY_Y + BATTERY_H) {
+        const pad = extraRadius;
+        if (worldPos.x >= BATTERY_X - pad && worldPos.x <= BATTERY_X + BATTERY_W + pad &&
+            worldPos.y >= BATTERY_Y - pad && worldPos.y <= BATTERY_Y + BATTERY_H + pad) {
           return comp;
         }
       } else if (comp.type === 'switch') {
@@ -1048,7 +1111,7 @@
         const c2 = getHoleCoords(comp.pin2.col, comp.pin2.row);
         const midX = (c1.x + c2.x) / 2;
         const midY = (c1.y + c2.y) / 2;
-        if (Math.hypot(worldPos.x - midX, worldPos.y - midY) < 20) return comp;
+        if (Math.hypot(worldPos.x - midX, worldPos.y - midY) < (20 + extraRadius)) return comp;
       }
     }
     return null;
