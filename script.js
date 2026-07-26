@@ -201,8 +201,17 @@
   // ==========================================================================
   // 4. 캔버스 리사이즈 및 뷰포트 맞춤 (Fit)
   // ==========================================================================
+  let lastContainerLeft = null;
+
   function resizeCanvas() {
     const rect = container.getBoundingClientRect();
+    if (lastContainerLeft !== null) {
+      const deltaLeft = lastContainerLeft - rect.left;
+      if (deltaLeft !== 0) {
+        panX += deltaLeft;
+      }
+    }
+    lastContainerLeft = rect.left;
     canvas.width = rect.width;
     canvas.height = rect.height;
     draw();
@@ -615,9 +624,10 @@
       const timeDiff = now - lastTapTime;
       const distFromLastTap = Math.hypot(screenX - lastTapScreenPos.x, screenY - lastTapScreenPos.y);
 
-      if (timeDiff < 450 && distFromLastTap < 45) {
-        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (미세 떨림 보정을 위해 여유 반경 18px 허용)
-        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 18);
+      // 이전 탭 기록이 있고 450ms 이내, 45px 이내 터치인 경우 (2번째 터치)
+      if (lastTapTime > 0 && timeDiff < 450 && distFromLastTap < 45) {
+        // 1. 일반 부품/전선(회로) 더블 탭 삭제 (여유 반경 20px 적용)
+        const doubleTapComp = lastTapComponent || getComponentAt(wPt, 20);
         if (doubleTapComp) {
           deleteComponent(doubleTapComp);
           resetTapState();
@@ -639,18 +649,11 @@
         }
       }
 
-      // 첫 번째 탭 후보 정보 저장
-      const clickedComp = getComponentAt(wPt, 12);
-      const strokeIdx = drawMode ? getDrawingStrokeAt(wPt, 15) : -1;
-
-      if (clickedComp || strokeIdx !== -1) {
-        lastTapTime = now;
-        lastTapComponent = clickedComp;
-        lastTapDrawingIndex = strokeIdx;
-        lastTapScreenPos = { x: screenX, y: screenY };
-      } else {
-        resetTapState();
-      }
+      // 첫 번째 탭 정보 무조건 저장 (미스 터치 및 3회 연속 터치 현상 방지)
+      lastTapTime = now;
+      lastTapComponent = getComponentAt(wPt, 20);
+      lastTapDrawingIndex = drawMode ? getDrawingStrokeAt(wPt, 25) : -1;
+      lastTapScreenPos = { x: screenX, y: screenY };
     }
 
     pointers.set(e.pointerId, { 
@@ -754,8 +757,8 @@
 
     const activePointer = pointers.get(e.pointerId);
 
-    // 이동 거리가 8px 이상인 경우 드래그로 판정하여 더블탭 대기 상태 해제
-    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 8) {
+    // 이동 거리가 35px 이상인 경우만 실제 드래그로 판정하여 더블탭 대기 상태 해제 (애플펜슬 미세 떨림 보정)
+    if (Math.hypot(screenX - activePointer.screenX, screenY - activePointer.screenY) > 35) {
       resetTapState();
     }
 
