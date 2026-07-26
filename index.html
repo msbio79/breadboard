@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko" class="light-mode">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>고등학교 과학 탐구 - 가상 브래드보드 실험실</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts Outfit & Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 왼쪽 메뉴 (사이드바) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2 class="logo-title">Breadboard Lab</h2>
+        <div class="header-actions">
+          <!-- 테마 전환 버튼 (다크/라이트) -->
+          <button id="themeToggleBtn" class="action-btn" title="다크/라이트 모드 전환" aria-label="테마 전환">
+            <svg class="sun-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+          <!-- 사이드바 접기 버튼 -->
+          <button id="sidebarToggleBtn" class="action-btn" title="메뉴 접기/펴기" aria-label="메뉴 토글">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll-content">
+        <!-- 1. 실험 주제 선택 -->
+        <section class="menu-section">
+          <h3>🔬 실험 주제 선택</h3>
+          <div class="select-wrapper">
+            <select id="experimentSelect">
+              <option value="free">자유 실습 (자유롭게 회로 구성)</option>
+              <option value="basic-led">실험 1: LED 불 켜기 기본 회로</option>
+              <option value="series-resistors">실험 2: 저항의 직렬연결 회로</option>
+              <option value="parallel-resistors">실험 3: 저항의 병렬연결 회로</option>
+              <option value="switch-led">실험 4: 스위치 제어 회로</option>
+            </select>
+          </div>
+        </section>
+
+
+        <!-- 3. 전자 부품 선택 -->
+        <section class="menu-section">
+          <h3>⚡ 회로 부품 선택</h3>
+          <div class="component-selector-grid">
+            <button class="comp-select-btn active" data-type="wire" title="점퍼선 연결">
+              <span class="comp-icon wire-icon"></span>
+              <span class="comp-label">점퍼선</span>
+            </button>
+            <button class="comp-select-btn" data-type="battery" title="전원 배터리">
+              <span class="comp-icon battery-icon"></span>
+              <span class="comp-label">배터리</span>
+            </button>
+            <button class="comp-select-btn" data-type="resistor" title="저항기">
+              <span class="comp-icon resistor-icon"></span>
+              <span class="comp-label">저항</span>
+            </button>
+            <button class="comp-select-btn" data-type="led" title="발광 다이오드">
+              <span class="comp-icon led-icon"></span>
+              <span class="comp-label">LED</span>
+            </button>
+            <button class="comp-select-btn" data-type="switch" title="슬라이드 스위치">
+              <span class="comp-icon switch-icon"></span>
+              <span class="comp-label">스위치</span>
+            </button>
+          </div>
+
+          <!-- 세부 옵션 패널 (선택된 소자에 따라 동적 표시) -->
+          <div class="sub-options-panel" id="wireOptions">
+            <label>점퍼선 색상:</label>
+            <div class="color-picker-group">
+              <button class="color-btn active" data-color="#ff3b30" style="background-color: #ff3b30;"></button>
+              <button class="color-btn" data-color="#007aff" style="background-color: #007aff;"></button>
+              <button class="color-btn" data-color="#34c759" style="background-color: #34c759;"></button>
+              <button class="color-btn" data-color="#ffcc00" style="background-color: #ffcc00;"></button>
+              <button class="color-btn" data-color="#af52de" style="background-color: #af52de;"></button>
+              <button class="color-btn" data-color="#000000" style="background-color: #000000;"></button>
+            </div>
+          </div>
+
+          <div class="sub-options-panel" id="resistorOptions" style="display:none;">
+            <label>저항 값 설정:</label>
+            <div class="resistor-btn-group" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px;">
+              <button class="resistor-val-btn active" data-val="220">220 Ω</button>
+              <button class="resistor-val-btn" data-val="1000">1 kΩ</button>
+              <button class="resistor-val-btn" data-val="10000">10 kΩ</button>
+            </div>
+          </div>
+
+          <div class="sub-options-panel" id="ledOptions" style="display:none;">
+            <label>LED 색상:</label>
+            <div class="color-picker-group">
+              <button class="color-btn active" data-color="red" style="background-color: #ff2d55;"></button>
+              <button class="color-btn" data-color="green" style="background-color: #4cd964;"></button>
+              <button class="color-btn" data-color="blue" style="background-color: #5ac8fa;"></button>
+            </div>
+          </div>
+        </section>
+
+        <div class="control-row-single" style="margin: 20px 0;">
+          <button id="resetCircuitBtn" class="sub-btn danger" style="background-color: #ef4444; color: white; padding: 12px; font-size: 1rem; width: 100%;">회로 전체 초기화</button>
+        </div>
+
+        <!-- 4. 필기 모드 설정 -->
+        <section class="menu-section">
+          <h3>✏️ 필기 및 설명 도구</h3>
+          <div class="drawing-control-wrapper">
+            <button id="drawModeBtn" class="toggle-tool-btn" title="그리기 모드 켜기/끄기">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>필기 모드 OFF</span>
+            </button>
+            
+            <div class="draw-tools-sub" id="drawToolsSub">
+              <div class="tool-row">
+                <label>펜 색상:</label>
+                <div class="pen-colors">
+                  <button class="pen-color-btn active" data-pen-color="#ff3b30" style="background-color: #ff3b30;"></button>
+                  <button class="pen-color-btn" data-pen-color="#007aff" style="background-color: #007aff;"></button>
+                  <button class="pen-color-btn" data-pen-color="#4cd964" style="background-color: #4cd964;"></button>
+                  <button class="pen-color-btn" data-pen-color="#ffcc00" style="background-color: #ffcc00;"></button>
+                  <button class="pen-color-btn" data-pen-color="#000000" style="background-color: #000000;" id="blackPenBtn"></button>
+                </div>
+              </div>
+
+              <div class="tool-row">
+                <label for="penSize">펜 굵기: <span id="penSizeVal">5px</span></label>
+                <input type="range" id="penSize" min="2" max="20" value="5" step="1">
+              </div>
+
+              <div class="tool-row-buttons">
+                <button id="eraserBtn" class="draw-action-btn" title="지우개 도구">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16c-1.5-1.5-1.5-3.5 0-5l8.5-8.5c1.5-1.5 3.5-1.5 5 0l5 5c1.5 1.5 1.5 3.5 0 5L12 20"></path><line x1="6" y1="11" x2="16" y2="1"></line></svg>
+                  <span>지우개</span>
+                </button>
+                <button id="clearDrawBtn" class="draw-action-btn danger" title="모든 판서 지우기">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                  <span>전체 삭제</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. 시뮬레이션 설정 -->
+        <section class="menu-section">
+          <h3>⚙️ 시뮬레이션 옵션</h3>
+          <div class="option-toggle">
+            <label class="switch-container">
+              <input type="checkbox" id="showInternalWires" checked>
+              <span class="slider-round"></span>
+            </label>
+            <span class="option-text">보드 내부 연결선 표시</span>
+          </div>
+
+          <div class="option-toggle">
+            <label class="switch-container">
+              <input type="checkbox" id="showCurrentFlow" checked>
+              <span class="slider-round"></span>
+            </label>
+            <span class="option-text">전류/전자 이동 애니메이션 표시</span>
+          </div>
+
+          <div class="option-toggle">
+            <label class="switch-container">
+              <input type="checkbox" id="currentDirection" checked>
+              <span class="slider-round"></span>
+            </label>
+            <span class="option-text" id="flowTypeText">전류의 방향 표시 (+에서 -)</span>
+          </div>
+
+          <div class="option-toggle" style="margin-top: 12px; flex-direction: column; align-items: stretch; gap: 8px;">
+            <label for="flowSpeed">전류/전자 흐름 속도: <span id="flowSpeedVal">1.0x</span></label>
+            <input type="range" id="flowSpeed" min="0.1" max="5.0" value="1.0" step="0.1">
+          </div>
+
+          <div class="control-row-single" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <button id="flowToggleBtn" class="sub-btn">전류 ⇄ 전자 방향 전환</button>
+          </div>
+        </section>
+
+        <!-- 6. 브래드보드 기본 이론 -->
+        <section class="menu-section theory-section">
+          <h3>📖 브래드보드 사용 설명</h3>
+          <ul>
+            <li><strong>a~e행</strong> 및 <strong>f~j행</strong>은 같은 열(세로줄)의 5개 구멍이 금속 핀으로 내부 연결되어 있습니다.</li>
+            <li>가운데 분리 홈을 경계로 <strong>상단(a~e)</strong>과 <strong>하단(f~j)</strong>은 서로 끊어져 있습니다.</li>
+            <li>부품의 다리가 같은 세로줄에 꽂히면 내부에서 전기적으로 연결(쇼트)되므로, 다른 줄에 나누어 꽂아야 합니다.</li>
+          </ul>
+        </section>
+      </div>
+    </aside>
+
+    <!-- 오른쪽 메인 캔버스 영역 -->
+    <main class="canvas-container" id="canvasContainer">
+      <!-- 캔버스 엘리먼트 -->
+      <canvas id="simCanvas"></canvas>
+
+      <!-- 왼쪽 메뉴가 닫혔을 때 표시되는 플로팅 토글 버튼 -->
+      <button id="sidebarExpandBtn" class="floating-btn sidebar-expand-btn" title="메뉴 열기" style="display:none;">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+
+
+      <!-- 상단 정보 메시지 보드 (실험 단계, 쇼트 알림 등 출력) -->
+      <div id="messageBoard" class="message-board">
+        <span id="messageText">반가워요! 회로 실험을 시작해봅시다.</span>
+      </div>
+
+      <!-- 우측 하단 캔버스 뷰 제어 패널 (확대, 축소, 화면맞춤) -->
+      <div class="view-controls-panel">
+        <button id="zoomInBtn" class="view-ctrl-btn" title="화면 확대 (Zoom In)">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+        </button>
+        <button id="zoomOutBtn" class="view-ctrl-btn" title="화면 축소 (Zoom Out)">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+        </button>
+        <button id="zoomFitBtn" class="view-ctrl-btn" title="화면 크기 맞춤 (Fit to Screen)">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M12 3v18M3 7l4-4-4 4M21 7l-4-4 4 4M3 17l4 4-4-4M21 17l-4 4 4-4"></path></svg>
+        </button>
+      </div>
+
+
+      <!-- 현재 도구 설명 힌트 오버레이 -->
+      <div class="canvas-hint" id="canvasHint">
+        <span>점퍼선 모드: 보드의 구멍 두 곳을 차례로 터치/클릭하여 연결하세요.</span>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js?v=2"></script>
+</body>
+</html>
